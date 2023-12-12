@@ -1,0 +1,7 @@
+{
+  "minCallDuration": 5,
+  "maxCallDuration": 50,
+  "minDeadlineDuration": 20,
+  "maxDeadlineDuration": 60,
+  "numOperators": 10
+}
