@@ -64,16 +64,19 @@ void Call::setStats(std::chrono::system_clock::time_point DT_answered,
 
     callStatus_ = CallStatus::OK;
 }
-
-RequestQueue::RequestQueue() : maxSize_(100) {}
+RequestQueue::RequestQueue() {}
 
 RequestQueue& RequestQueue::Get() {
     static RequestQueue instance;
     return instance;
 }
 
+void RequestQueue::setMaxSize(std::size_t maxSize) {
+    maxSize_ = maxSize;
+}
+
 void RequestQueue::push(std::unique_ptr<Call> callRequest) {
-    BOOST_LOG_TRIVIAL(debug) << "Call " << callRequest->getNumber() << " pushed into queue";
+    BOOST_LOG_TRIVIAL(debug) << "Client number" << callRequest->getNumber() << " pushed into queue";
     numberType number = callRequest->getNumber();
 
     std::unique_lock lock(mutex_);

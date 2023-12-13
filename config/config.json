@@ -3,5 +3,6 @@
   "maxCallDuration": 50,
   "minDeadlineDuration": 20,
   "maxDeadlineDuration": 60,
-  "numOperators": 10
+  "numOperators": 10,
+  "queueSize": 50
 }

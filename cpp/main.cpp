@@ -16,8 +16,7 @@ using tcp = boost::asio::ip::tcp;
 
 using json = nlohmann::json;
 
-int main(int argc, char* argv[]) {
-
+int main(int argc, char *argv[]) {
     // Set up networking
     auto const address = net::ip::make_address(argv[1]);
     auto port = static_cast<unsigned short>(std::atoi(argv[2]));
@@ -25,10 +24,10 @@ int main(int argc, char* argv[]) {
     tcp::acceptor acceptor{ioc, {address, port}};
     tcp::socket socket{ioc};
 
-    // Instantiate singletons
-    RequestQueue& requestQueue = RequestQueue::Get();
+    // Configure program
     CDRWriter::getInstance().setPath("../../config/log.txt");
     Config &config = Config::get();
+    RequestQueue::Get().setMaxSize(config.queueSize);
     ShardedDistribution distribution(50, config.minCallDuration, config.maxCallDuration);
 
     // Create thread for each callOperator

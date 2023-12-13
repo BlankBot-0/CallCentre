@@ -56,7 +56,7 @@ class RequestQueue
 {
 public:
     static RequestQueue& Get();
-
+    void setMaxSize(std::size_t maxSize);
     void push(std::unique_ptr<Call> data);
     std::unique_ptr<Call> pop();
     std::unique_ptr<Call> eraseRequest(numberType clientNumber);
@@ -71,7 +71,7 @@ private:
     std::map<numberType, std::unique_ptr<Call>> RequestsMap_;
     numberQueue RequestQueue_;
     std::shared_mutex mutex_;
-    const std::size_t maxSize_;
+    std::size_t maxSize_;
 
     RequestQueue(const RequestQueue&) = delete;
     RequestQueue& operator=(const RequestQueue&) = delete;
