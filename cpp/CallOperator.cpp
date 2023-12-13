@@ -4,11 +4,25 @@
 
 #include "CallOperator.h"
 
-CallOperator::CallOperator(size_t ID, int minCallDuration, int maxCallDuration) :
+ShardedDistribution::ShardedDistribution(size_t shardsCount, int minCallDuration, int maxCallDuration) :
+        shardsCount(shardsCount),
+        shards(std::vector<Shard>(shardsCount)),
+        distribution(std::uniform_int_distribution<>{
+                minCallDuration,
+                maxCallDuration}
+        ) {
+}
+
+std::chrono::duration<int> ShardedDistribution::getDuration(std::thread::id threadId) {
+    size_t index = std::hash<std::thread::id>{}(threadId) % shardsCount;
+    auto &shard = shards[index];
+    std::lock_guard<std::mutex> lock(shard.mutex);
+    return static_cast<std::chrono::duration<int>>(distribution(shard.generator));
+}
+
+CallOperator::CallOperator(size_t ID, ShardedDistribution &shardedDistribution) :
         operatorID_(ID),
-        available_(true),
-        processTime_{minCallDuration, maxCallDuration}
-        {}
+        available_(true), shardedDistribution(shardedDistribution) {}
 
 std::size_t CallOperator::getOperatorID() {
     return operatorID_;
@@ -23,21 +37,17 @@ void CallOperator::processCalls() {
             continue;
         }
         available_ = false;
-        std::chrono::duration<int> callDuration;
-        { // scope for safely accessing rnd num generator
-            BOOST_LOG_TRIVIAL(trace) << "Generating call duration between operator "
-                                     << getOperatorID()
-                                     << " and client with number "
-                                     << clientCall->getNumber();
+        BOOST_LOG_TRIVIAL(trace) << "Generating call duration between operator "
+                                 << getOperatorID()
+                                 << " and client with number "
+                                 << clientCall->getNumber();
 
-            std::lock_guard<std::mutex> lock(mutex_);
-            callDuration = std::chrono::duration<int>{processTime_(generator_)};
-        }
+        std::chrono::duration<int> callDuration = shardedDistribution.getDuration(std::this_thread::get_id());
 
         clientCall->setStats(std::chrono::system_clock::now(),
-                                   std::chrono::system_clock::now() + callDuration,
-                                   callDuration,
-                                   operatorID_);
+                             std::chrono::system_clock::now() + callDuration,
+                             callDuration,
+                             operatorID_);
 
         std::this_thread::sleep_for(std::chrono::duration_cast<std::chrono::seconds>(callDuration));
         available_ = true;
@@ -47,7 +57,3 @@ void CallOperator::processCalls() {
         CDRWriter::getInstance().writeToCDR(clientCall->getReport());
     }
 }
-
-std::mt19937 CallOperator::generator_;
-std::mutex CallOperator::mutex_;
-// TODO: processTime is defined in "config" thus should be initialized in main.cpp

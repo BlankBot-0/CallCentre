@@ -12,9 +12,25 @@
 
 #include "CDRwriter.h"
 
+struct ShardedDistribution {
+    ShardedDistribution(size_t shardsCount, int minCallDuration, int maxCallDuration);
+
+    std::chrono::duration<int> getDuration(std::thread::id threadId);
+
+    struct Shard {
+        std::mt19937 generator;
+        std::mutex mutex;
+    };
+
+private:
+    std::uniform_int_distribution<> distribution;
+    size_t shardsCount;
+    std::vector<Shard> shards;
+};
+
 class CallOperator {
 public:
-    CallOperator(size_t ID, int minCallDuration, int maxCallDuration);
+    CallOperator(size_t ID, ShardedDistribution &distribution);
 
     void processCalls();
     std::size_t getOperatorID();
@@ -22,11 +38,7 @@ public:
 private:
     size_t operatorID_;
     bool available_;
-    std::uniform_int_distribution<> processTime_;
-    // static std::uniform_int_distribution<> processTime_;
-    static std::mt19937 generator_;
-    static std::mutex mutex_;
-
+    ShardedDistribution &shardedDistribution;
 };
 
 #endif //CALLCENTRE_CALLOPERATOR_H
