@@ -76,7 +76,7 @@ void RequestQueue::setMaxSize(std::size_t maxSize) {
 }
 
 void RequestQueue::push(std::unique_ptr<Call> callRequest) {
-    BOOST_LOG_TRIVIAL(debug) << "Client number" << callRequest->getNumber() << " pushed into queue";
+    BOOST_LOG_TRIVIAL(debug) << "Client number " << callRequest->getNumber() << " pushed into queue";
     numberType number = callRequest->getNumber();
 
     std::unique_lock lock(mutex_);

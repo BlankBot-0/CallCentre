@@ -15,16 +15,15 @@ void CDRWriter::setPath(const std::string& path) {
     pathCDR_ = path;
 }
 
-void CDRWriter::writeToCDR(const std::string& report) {
-    std::async(std::launch::async, [this, report]() {
-        std::lock_guard<std::mutex> lock(mutex_);
+void CDRWriter::writeToCDR(const std::string &report) {
+    std::lock_guard<std::mutex> lock(mutex_);
 
-        std::ofstream file(pathCDR_, std::ios_base::app);
-        if (file.is_open()) {
-            file << report << "\n";
-            file.close();
-        } else {
-            BOOST_LOG_TRIVIAL(debug) << "Can not open CDR";
-        }
-    });
+    // TODO: make async write
+    std::ofstream file(pathCDR_, std::ios_base::app);
+    if (file.is_open()) {
+        file << report << "\n";
+        file.close();
+    } else {
+        BOOST_LOG_TRIVIAL(debug) << "Can not open CDR";
+    }
 }
