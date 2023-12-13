@@ -6,32 +6,45 @@
 #define CALLCENTRE_SERVUTILS_H
 
 #include <memory>
+#include <fstream>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/asio.hpp>
+#include <nlohmann/json.hpp>
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 using tcp = boost::asio::ip::tcp;
 
-namespace servUtils {
-    std::mutex countMutex;
+using json = nlohmann::json;
 
-    std::size_t request_count();
+struct Config {
+    int minCallDuration;
+    int maxCallDuration;
+    int minDeadlineDuration;
+    int maxDeadlineDuration;
+    int numOperators;
+    int queueSize;
 
-//    std::time_t now()
-//    {
-//        return std::time(0);
-//    }
-//
-//    class commonstructure {
-//    public:
-//        commonstructure(){}
-//    private:
-//        int m_callid;
-//        http::request<http::dynamic_body> request_;
-//
-//    };
-}
+    static Config &get() {
+        static Config instance;
+        return instance;
+    }
+
+private:
+    Config() {
+        // Configure the service
+        std::ifstream configFile("../config.json");
+        json config = json::parse(configFile);
+        configFile.close();
+
+        minCallDuration = config["minCallDuration"].get<int>();
+        maxCallDuration = config["maxCallDuration"].get<int>();
+        minDeadlineDuration = config["minDeadlineDuration"].get<int>();
+        maxDeadlineDuration = config["maxDeadlineDuration"].get<int>();
+        numOperators = config["numOperators"].get<int>();
+        queueSize = config["queueSize"].get<int>();
+    }
+};
 
 #endif //CALLCENTRE_SERVUTILS_H

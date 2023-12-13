@@ -6,8 +6,7 @@
 #include "Server.h"
 
 http_connection::http_connection(tcp::socket socket, int deadlineDuration)
-    : socket_(std::move(socket)), deadlineDuration_(deadlineDuration)
-{}
+        : socket_(std::move(socket)), deadlineDuration_(deadlineDuration) {}
 
 void http_connection::setDeadline(int deadlineDuration) {
     deadlineDuration_ = deadlineDuration;
@@ -33,10 +32,9 @@ void http_connection::read_request() {
             buffer_,
             request_,
             [self](beast::error_code ec,
-                   std::size_t bytes_transferred)
-            {
+                   std::size_t bytes_transferred) {
                 boost::ignore_unused(bytes_transferred);
-                if(!ec)
+                if (!ec)
                     self->process_request();
             });
 }
@@ -51,7 +49,7 @@ void http_connection::process_request() {
 
         if (RequestQueue::Get().contains(clientNumber_)) {
             // Client's call is already pending
-            BOOST_LOG_TRIVIAL(trace) << "Refusal to handle request, already pending";
+            BOOST_LOG_TRIVIAL(trace) << "Refusal to handle request, already pending clientNumber=" << clientNumber_;
             response_.result(http::status::too_many_requests);
             beast::ostream(response_.body()) << "already in queue";
 
@@ -79,7 +77,7 @@ void http_connection::process_request() {
                     callID,
                     std::chrono::system_clock::now(),
                     clientNumber_
-                    );
+            );
 
             RequestQueue::Get().push(std::move(incomingCall));
             response_.result(http::status::ok);
@@ -108,9 +106,8 @@ void http_connection::write_response() {
     http::async_write(
             socket_,
             response_,
-            [self](beast::error_code ec, std::size_t)
-            {
-                // maybe we want to be able to receive client's request
+            [self](beast::error_code ec, std::size_t) {
+                // we want to be able to receive client's request
                 // about them cancelling the call and thus
                 // shutdown the socket only upon this event or
                 // being done processing request
@@ -124,10 +121,8 @@ void http_connection::check_deadline() {
     auto self = shared_from_this();
 
     deadline_.async_wait(
-            [self](beast::error_code ec)
-            {
-                if(!ec)
-                {
+            [self](beast::error_code ec) {
+                if (!ec) {
                     // Delete client's request from queue and update CDR
                     BOOST_LOG_TRIVIAL(debug) << "Deleting call due to connection timeout";
                     std::unique_ptr<Call> call = RequestQueue::Get().eraseRequest(self->clientNumber_);
@@ -141,27 +136,26 @@ void http_connection::check_deadline() {
             });
 }
 
-void http_server(tcp::acceptor& acceptor, tcp::socket& socket, int minDeadlineDuration, int maxDeadlineDuration)
-{
+std::mt19937 rng{};
+
+void http_server(tcp::acceptor &acceptor, tcp::socket &socket) {
+    Config &config = Config::get();
     acceptor.async_accept(socket,
-                          [&](beast::error_code ec)
-                          {
+                          [&](beast::error_code ec) {
+                              std::uniform_int_distribution<> deadlineDist{config.minDeadlineDuration,
+                                                                           config.maxDeadlineDuration};
                               //BOOST_LOG_TRIVIAL(trace) << "Generating connection expiration period";
-                              std::mt19937 rng;
                               //BOOST_LOG_TRIVIAL(trace) << "RNG for connection expiration period created";
-                              std::uniform_int_distribution<> deadlineDist{minDeadlineDuration,
-                                                                           maxDeadlineDuration};
                               //BOOST_LOG_TRIVIAL(trace) << "Distribution of connection expiration period created";
                               int deadlineDuration = deadlineDist(rng);
                               //BOOST_LOG_TRIVIAL(trace) << "Connection expiration period set";
-                              if(!ec)
-                              {
+                              if (!ec) {
                                   BOOST_LOG_TRIVIAL(debug) << "Setting up new connection";
                                   std::make_shared<http_connection>(std::move(socket), deadlineDuration)->start();
                               } else {
                                   BOOST_LOG_TRIVIAL(error) << "Error occured when accepting a connection: " << ec;
                               }
                               BOOST_LOG_TRIVIAL(trace) << "Listening for new requests";
-                              http_server(acceptor, socket, minDeadlineDuration, maxDeadlineDuration);
+                              http_server(acceptor, socket);
                           });
 }

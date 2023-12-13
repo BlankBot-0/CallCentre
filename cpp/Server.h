@@ -71,6 +71,6 @@ private:
 };
 
 // "Loop" forever accepting new connections.
-void http_server(tcp::acceptor& acceptor, tcp::socket& socket, int minDeadlineDuration, int maxDeadlineDuration);
+void http_server(tcp::acceptor& acceptor, tcp::socket& socket);
 
 #endif //CALLCENTRE_SERVER_H

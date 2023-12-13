@@ -6,6 +6,7 @@
 #define PROJECTNAME_CDRWRITER_H
 
 #include "RequestQueue.h"
+#include "servUtils.h"
 #include <fstream>
 #include <iostream>
 
