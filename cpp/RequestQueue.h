@@ -10,6 +10,7 @@
 #include <map>
 #include <list>
 #include <mutex>
+#include <shared_mutex>
 #include <sstream>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
@@ -63,12 +64,13 @@ public:
     bool isEmpty();
     bool isFull();
     bool contains(numberType clientNumber);
+    bool containsNoLock(numberType clientNumber);
 
 private:
     RequestQueue();
     std::map<numberType, std::unique_ptr<Call>> RequestsMap_;
     numberQueue RequestQueue_;
-    std::mutex mutex_;
+    std::shared_mutex mutex_;
     const std::size_t maxSize_;
 
     RequestQueue(const RequestQueue&) = delete;

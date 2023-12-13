@@ -76,13 +76,13 @@ void RequestQueue::push(std::unique_ptr<Call> callRequest) {
     BOOST_LOG_TRIVIAL(debug) << "Call " << callRequest->getNumber() << " pushed into queue";
     numberType number = callRequest->getNumber();
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock lock(mutex_);
     RequestsMap_[number] = std::move(callRequest);
     RequestQueue_.push_back(number);
 }
 
 std::unique_ptr<Call> RequestQueue::pop() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock lock(mutex_);
     if (RequestQueue_.empty()) {
         return nullptr;
     }
@@ -98,12 +98,12 @@ std::unique_ptr<Call> RequestQueue::pop() {
 }
 
 std::unique_ptr<Call> RequestQueue::eraseRequest(numberType clientNumber) {
-    if (!contains(clientNumber)) {
+    std::unique_lock lock(mutex_);
+    if (!containsNoLock(clientNumber)) {
         BOOST_LOG_TRIVIAL(warning) << "An attempt to erase non-existing client number " << clientNumber;
         return nullptr;
     }
     BOOST_LOG_TRIVIAL(trace) << "Erasing clent number " << clientNumber << " from queue";
-    std::lock_guard<std::mutex> lock(mutex_);
     auto queueIter = RequestQueue_.begin();
     while (*queueIter != clientNumber) {
         ++queueIter;
@@ -117,16 +117,20 @@ std::unique_ptr<Call> RequestQueue::eraseRequest(numberType clientNumber) {
 }
 
 bool RequestQueue::isEmpty() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_lock lock(mutex_);
     return RequestQueue_.empty();
 }
 
 bool RequestQueue::isFull() {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_lock lock(mutex_);
     return RequestQueue_.size() == maxSize_;
 }
 
 bool RequestQueue::contains(numberType clientNumber) {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::shared_lock lock(mutex_);
+    return containsNoLock(clientNumber);
+}
+
+bool RequestQueue::containsNoLock(numberType clientNumber) {
     return RequestsMap_.contains(clientNumber);
 }

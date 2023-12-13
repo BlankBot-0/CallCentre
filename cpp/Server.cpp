@@ -110,10 +110,10 @@ void http_connection::write_response() {
             response_,
             [self](beast::error_code ec, std::size_t)
             {
-                // TODO: we want to be able to receive client's request
-                // TODO: about them cancelling the call and thus
-                // TODO: shutdown the socket only upon this event or
-                // TODO: being done processing request
+                // maybe we want to be able to receive client's request
+                // about them cancelling the call and thus
+                // shutdown the socket only upon this event or
+                // being done processing request
                 self->socket_.shutdown(tcp::socket::shutdown_send, ec);
                 self->deadline_.cancel();
             });
