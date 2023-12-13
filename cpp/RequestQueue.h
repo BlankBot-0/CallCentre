@@ -22,7 +22,20 @@ enum CallStatus {OK, PENDING, TIMEOUT, OVERLOAD};
 using numberType = std::string;
 using numberQueue = std::list<numberType>;
 
-class Call
+class CallInterface {
+public:
+    virtual ~CallInterface() = default;
+
+    virtual numberType getNumber() const = 0;
+    virtual void setCallStatus(CallStatus status) = 0;
+    virtual std::string getReport() const = 0;
+    virtual void setStats(std::chrono::system_clock::time_point DT_answered,
+                          std::chrono::system_clock::time_point DT_completion,
+                          std::chrono::duration<int> callDuration,
+                          size_t operatorID) = 0;
+};
+
+class Call : public CallInterface
 {
 public:
     Call(size_t callID,
@@ -38,6 +51,7 @@ public:
                   size_t operatorID);
     std::string getReport() const;
 private:
+    std::string timeToString(const std::chrono::system_clock::time_point& timePoint) const;
     std::string callStatusToString(CallStatus status) const;
 
     size_t callID_;

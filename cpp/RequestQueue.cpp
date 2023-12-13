@@ -2,15 +2,29 @@
 // Created by vinilco on 12/9/23.
 //
 
+#include <iomanip>
 #include "RequestQueue.h"
 
 Call::Call(size_t callID,
            std::chrono::system_clock::time_point DT_incoming,
            numberType clientNumber) :
            callID_(callID),
+           DT_incoming_(DT_incoming),
            callStatus_(CallStatus::PENDING),
            number_(clientNumber) {
     BOOST_LOG_TRIVIAL(trace) << "Call " << callID_ << " constructed";
+}
+
+std::string Call::timeToString(const std::chrono::system_clock::time_point &timePoint) const {
+    std::time_t time = std::chrono::system_clock::to_time_t(timePoint);
+
+    std::tm tmStruct;
+    localtime_r(&time, &tmStruct);
+
+    std::ostringstream oss;
+    oss << std::put_time(&tmStruct, "%Y-%m-%d %H:%M:%S");
+
+    return oss.str();
 }
 
 void Call::setCallStatus(CallStatus status) {
@@ -29,6 +43,8 @@ std::string Call::callStatusToString(CallStatus status) const {
             return "PENDING";
         case CallStatus::TIMEOUT:
             return "TIMEOUT";
+        case CallStatus::OVERLOAD:
+            return "OVERLOAD";
         default:
             return "Unknown";
     }
@@ -36,17 +52,23 @@ std::string Call::callStatusToString(CallStatus status) const {
 
 std::string Call::getReport() const {
     std::stringstream report;
+    if (callStatus_ == CallStatus::OK) {
+        // Format the report
+        report << timeToString(DT_incoming_) << " ; "
+               << timeToString(DT_answered_) << " ; "
+               << timeToString(DT_completion_) << " ; "
+               << callDuration_.count() << "s " << " ; "
+               << callStatusToString(callStatus_) << " ; "
+               << callID_ << " ; "
+               << operatorID_ << " ; "
+               << std::string(getNumber());
+    } else {
+        report << timeToString(DT_incoming_) << " ; "
+               << callStatusToString(callStatus_) << " ; "
+               << callID_ << " ; "
+               << std::string(getNumber());
+    }
     BOOST_LOG_TRIVIAL(trace) << "Report requested from call " << callID_;
-
-    // Format the report
-    report << std::chrono::system_clock::to_time_t(DT_incoming_) << " ; "
-           << std::chrono::system_clock::to_time_t(DT_answered_) << " ; "
-           << std::chrono::system_clock::to_time_t(DT_completion_) << " ; "
-           << callDuration_.count() << "s " << " ; "
-           << callStatusToString(callStatus_) << " ; "
-           << callID_ << " ; "
-           << operatorID_ << " ; "
-           << std::string(getNumber());
 
     return report.str();
 }
