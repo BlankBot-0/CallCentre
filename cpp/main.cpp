@@ -8,7 +8,7 @@
 #include "CallOperator.h"
 #include "Server.h"
 //#include "servUtils.h"
-std::string logoption = "trace";
+std::string logoption;
 std::string IP = "127.0.0.1";
 std::string uport = "8083";
 
@@ -39,6 +39,10 @@ void ProcessArgs(int argc, char** argv)
             {"logfilter", optional_argument, nullptr, 'l'},
             {nullptr, no_argument, nullptr, 0}
     };
+
+    if(argc < 5) {
+        std::string logoption = "trace";
+    }
 
     while (true)
     {
