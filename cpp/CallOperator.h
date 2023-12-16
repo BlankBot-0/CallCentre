@@ -18,6 +18,7 @@ struct ShardedDistribution {
     std::chrono::duration<int> getDuration(std::thread::id threadId);
 
     struct Shard {
+        Shard();
         std::mt19937 generator;
         std::mutex mutex;
     };

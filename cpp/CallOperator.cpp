@@ -13,6 +13,10 @@ ShardedDistribution::ShardedDistribution(size_t shardsCount, int minCallDuration
         ) {
 }
 
+ShardedDistribution::Shard::Shard() :
+        generator(std::chrono::steady_clock::now().time_since_epoch().count()) {
+        }
+
 std::chrono::duration<int> ShardedDistribution::getDuration(std::thread::id threadId) {
     size_t index = std::hash<std::thread::id>{}(threadId) % shardsCount;
     auto &shard = shards[index];
